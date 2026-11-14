@@ -1,0 +1,6 @@
+obj/
+bin/
+Checks/obj/
+Checks/bin/
+.build-profile/
+.packages/

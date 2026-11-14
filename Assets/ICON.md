@@ -1,0 +1,7 @@
+# Fitness Tracker icon
+
+Generated with the built-in image-generation tool. `FitnessTracker.png` is the full-resolution source with transparent corners. `FitnessTracker.ico` contains 16, 20, 24, 32, 40, 48, 64, 96, 128, and 256-pixel versions, preserving transparency. The icon is embedded in the Windows executable and in the shared WPF window style.
+
+## Generation prompt
+
+Use case: logo-brand. Asset type: Windows desktop application icon for a personal Fitness Tracker with a dark navy interface and mint accents. Create one polished, distinctive square app icon: a dark midnight navy rounded-square tile, with a bold mint-teal circular progress ring surrounding a simple rising fitness/activity graph stroke. The graph is one thick elegant continuous upward zigzag with three readable segments, ending in a small round point, suggesting measurable fitness progress. Restrained soft blue accent along a short part of the progress ring. Refined subtle dimensional shading on the navy tile, very clean mostly flat symbol, no fussy details. Strong silhouette and extremely legible at 16px and 32px. Centered front-on orthographic view, tile fills 92% of the square canvas, equal small margins. Palette navy #0C111B and #151D2B, mint #69E0C2, blue #80B7FF. Transparent outside the rounded tile, fully opaque tile. No text, no letters, no numbers, no mockup background, no scene, no extra icons, no watermark. One finished high-resolution square icon only.
