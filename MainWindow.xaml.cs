@@ -104,13 +104,13 @@ public partial class MainWindow : Window
         GoalRemainingText.Text = total <= store.Goals.CalorieGoal ? $"{store.Goals.CalorieGoal - total:N0} kcal to go" : $"{total - store.Goals.CalorieGoal:N0} kcal beyond goal";
         progress = Math.Clamp((double)(total / store.Goals.CalorieGoal), 0, 1);
         UpdateProgress();
-        var weight = store.LatestWeight(displayedDay);
+        var weight = store.LatestWeight(displayedDay, "L");
         GoalWeight.Text = $"{store.Goals.TargetWeightKg:0.##} kg";
         GoalWeightNote.Text = $"Target by {store.Goals.TargetDate:MMM d, yyyy}";
         var days = weight == null ? 0 : (store.Goals.TargetDate - weight.Date.Date).Days;
-        WeightGoalSummary.Text = weight == null ? "Record a weigh-in to get started" :
+        WeightGoalSummary.Text = weight == null ? "Record an L weigh-in to get started" :
             $"{Math.Max(0m, weight.WeightKg - store.Goals.TargetWeightKg):0.##} kg to go from {weight.WeightKg:0.##} kg ({weight.Type}, {weight.Date:MMM d})";
-        RequiredDeficit.Text = weight == null ? "Add a weight for your daily estimate." : days <= 0 ? "The target date has passed this weigh-in." :
+        RequiredDeficit.Text = weight == null ? "Add an L weight for your daily estimate." : days <= 0 ? "The target date has passed this weigh-in." :
             $"{Math.Max(0m, weight.WeightKg - store.Goals.TargetWeightKg) * FitnessStore.CaloriesPerKg / days:N0} kcal/day to target";
         historyRows = store.AllCalories.Select((e, i) => new HistoryRow(e.Date.Date, i, e.Calories >= 0 ? "Calorie deficit" : "Calorie surplus", $"{FitnessStore.Signed(e.Calories)} kcal", e.Calories >= 0 ? FitnessChart.Mint : FitnessChart.Rose, e, null))
             .Concat(store.Weights.Entries.Select((e, i) => new HistoryRow(e.Date.Date, i, $"Weigh-in · {e.Type}", $"{e.WeightKg:0.##} kg", e.Type.Equals("H", StringComparison.OrdinalIgnoreCase) ? FitnessChart.Orange : FitnessChart.Blue, null, e)))
