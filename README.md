@@ -4,6 +4,10 @@ Launch `bin/Debug/net8.0/Fitness Tracker.exe` (the desktop shortcut points there
 
 The dashboard contains weekly comparisons, net deficit, weight goal estimates, full entry history, calorie and weight entry forms, and three charts: H/L weight trends with interpolated midpoint, the last 14 days of calorie balances, and cumulative progress. Click a chart or its **Expand** button to open a resizable, nonmodal window. Enter/Space also expands a focused chart. Expanded charts update immediately on save; Escape closes them. Opening a chart again activates its existing window.
 
+Use **Expand** on the **Last Week** card to open **Weekly calories**. Browse all weeks (12 per page) with a compact chart, rounded calorie-axis ticks, net kcal, calendar-day average, logged days, and estimated weight change. Weeks run Monday–Sunday; the current week ends today. Unlogged weeks are marked as missing, and undated starting balances are excluded. The window updates on entry edits, saves, deletions, palette changes, and day rollover. Escape or Close returns to the dashboard.
+
+For a task-to-file source guide, see [PROJECT_MAP.md](PROJECT_MAP.md).
+
 Positive calories mean a deficit; negative calories mean a surplus. Entry dates use `YYYY-MM-DD` and cannot be in the future. Weights must be positive, with L selected by default. The latest same-day measurement wins, and each weight chart series uses the last measurement of its type for each day. The daily target-deficit estimate uses the latest L weigh-in and the days from that measurement to the target date; H entries are ignored, and an L entry is required. Weight-change and target-deficit calculations retain the original 7,700 kcal/kg estimate. Estimated weight changes under 1 kg are shown in grams (e.g. 450 g).
 
 History shows **15 entries per page**, newest first, with Previous/Next controls. Right-click any entry to **Edit** its amount/date (and H/L for weights) or **Delete** it. Deletion asks for confirmation; Cancel leaves the record untouched. Identical entries are handled individually. Saving refreshes summaries and all open charts immediately. Removing the last entry on a page moves back to the preceding page.
@@ -14,9 +18,10 @@ Click **Edit** on the weight-goal card or **Edit goals** under cumulative progre
 
 Pick a palette with the chips at the bottom of the dashboard; the whole app (charts, dialogs, chart windows, title bar) recolors immediately and the choice is remembered.
 
-- **Moonlight** (default): dark gray with cyan, pink, magenta and blue from the Space Within color palette.
-- **Moonlight Midnight**: deep indigo built from Space Within palette shades.
-- **Original**: the previous navy and mint colors.
+- **Original** (default): the original navy and mint colors.
+- **Light**: warm ivory, white cards, deep teal accents, and soft sage surfaces with contrasting rose and blue chart colors.
+
+The retired Moonlight palettes (including their earlier Space Within names) are removed from saved settings on load. A retired selection returns to Original.
 
 Palettes live in `ColorPalettes.json` beside the executable. To add one, copy a palette entry, give it a new `Name` and change its `#RRGGBB` values; missing or invalid colors fall back to the defaults, and a file that cannot be read is never overwritten.
 

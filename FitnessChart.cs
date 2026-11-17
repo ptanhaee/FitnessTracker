@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -7,7 +7,7 @@ using System.Windows.Shapes;
 
 namespace FitnessTracker;
 
-public enum ChartKind { Weight, Calories, Progress }
+public enum ChartKind { Weight, Calories, Progress, WeeklyCalories }
 
 public sealed class FitnessChart : Canvas
 {
@@ -22,6 +22,7 @@ public sealed class FitnessChart : Canvas
     private FitnessStore? store;
     internal FitnessStore? Store { get => store; set { store = value; Redraw(); } }
     public ChartKind Kind { get; set; }
+    internal IReadOnlyList<WeeklyCalorieSummary> WeeklyValues { get; set; } = Array.Empty<WeeklyCalorieSummary>();
     internal event Action? ExpandRequested;
 
     public FitnessChart()
@@ -49,6 +50,7 @@ public sealed class FitnessChart : Canvas
             case ChartKind.Weight: DrawWeight(); break;
             case ChartKind.Calories: DrawCalories(); break;
             case ChartKind.Progress: DrawProgress(); break;
+            case ChartKind.WeeklyCalories: DrawWeeklyCalories(); break;
         }
     }
 
@@ -92,6 +94,40 @@ public sealed class FitnessChart : Canvas
         }
     }
 
+    private void DrawWeeklyCalories()
+    {
+        if (WeeklyValues.Count == 0) { Empty("Your weekly story starts here.", "Log calories to compare your weeks."); return; }
+        var min = Math.Min(0, (double)WeeklyValues.Min(w => w.Total));
+        var max = Math.Max(0, (double)WeeklyValues.Max(w => w.Total));
+        var padding = Math.Max(100, (max - min) * .15);
+        var a = Axes(WeeklyValues[0].Start, WeeklyValues[^1].Start, min < 0 ? min - padding : 0, max + padding, "kcal", true, true);
+        var slot = a.Width / WeeklyValues.Count;
+        var width = Math.Min(46, slot * .58);
+        Line(a.Left, a.Y(0), a.Left + a.Width, a.Y(0), Muted, 1);
+        for (var i = 0; i < WeeklyValues.Count; i++)
+        {
+            var week = WeeklyValues[i];
+            var x = a.Left + slot * (i + .5);
+            var y = a.Y((double)week.Total);
+            var baseline = a.Y(0);
+            // Missing weeks get an outlined marker, distinct from a logged zero balance.
+            var color = week.Total < 0 ? Rose : Mint;
+            var bar = new Rectangle { Width = width, Height = Math.Max(3, Math.Abs(y - baseline)),
+                Fill = week.LoggedDays == 0 ? Brushes.Transparent : color,
+                Stroke = week.LoggedDays == 0 ? Muted : null, StrokeThickness = 1,
+                RadiusX = 3, RadiusY = 3, IsHitTestVisible = false };
+            SetLeft(bar, x - width / 2); SetTop(bar, Math.Min(y, baseline)); Children.Add(bar);
+            var details = week.LoggedDays == 0 ? "No entries recorded" :
+                $"{FitnessStore.Signed(week.Total)} kcal net · {(week.Total < 0 ? "Surplus" : week.Total > 0 ? "Deficit" : "Balanced")}\n{FitnessStore.Signed(week.DailyAverage)} kcal/day · {week.LoggedDays}/{week.ElapsedDays} days logged\n{FitnessStore.EstimatedWeight(week.Total)}";
+            var hit = new Rectangle { Width = slot, Height = a.Height, Fill = Brushes.Transparent,
+                ToolTip = $"{week.Start:MMM d, yyyy} – {week.End:MMM d, yyyy}{(week.IsCurrent ? " (in progress)" : "")}\n{details}" };
+            SetLeft(hit, a.Left + slot * i); SetTop(hit, a.Top);
+            ToolTipService.SetInitialShowDelay(hit, 0); Children.Add(hit);
+            var stride = Math.Max(1, (int)Math.Ceiling(60 / slot));
+            if (i % stride == 0) Label(week.Start.ToString("MMM d"), x - 29, a.Top + a.Height + 10, 58, TextAlignment.Center, 12);
+        }
+    }
+
     private void DrawProgress()
     {
         var daily = store!.DailyTotals(DateTime.Today);
@@ -114,17 +150,30 @@ public sealed class FitnessChart : Canvas
         DrawSeries(points, a, Mint, "Cumulative net deficit", "kcal");
     }
 
-    private PlotAxes Axes(DateTime first, DateTime last, double min, double max, string units, bool bars = false)
+    private PlotAxes Axes(DateTime first, DateTime last, double min, double max, string units, bool bars = false, bool weekly = false)
     {
-        var a = new PlotAxes(first, last, min, max, 60, 25, ActualWidth - 78, ActualHeight - 65, bars);
-        Label(units, 6, 3, 45);
-        for (var i = 0; i <= 4; i++)
+        var intervals = 4;
+        if (weekly)
         {
-            var value = min + (max - min) * i / 4;
+            // Round weekly ticks to readable steps and always include a true zero tick.
+            var roughStep = (max - min) / 3;
+            var magnitude = Math.Pow(10, Math.Floor(Math.Log10(roughStep)));
+            var step = new[] { 1d, 2d, 5d, 10d }.First(n => n * magnitude >= roughStep) * magnitude;
+            min = Math.Floor(min / step) * step;
+            max = Math.Ceiling(max / step) * step;
+            intervals = Math.Max(1, (int)Math.Round((max - min) / step));
+        }
+        var left = weekly ? 72 : 60;
+        var a = new PlotAxes(first, last, min, max, left, 25, ActualWidth - left - 18, ActualHeight - 65, bars);
+        Label(units, 6, 3, 55, size: weekly ? 12 : 11);
+        for (var i = 0; i <= intervals; i++)
+        {
+            var value = min + (max - min) * i / intervals;
             var y = a.Y(value);
             Line(a.Left, y, a.Left + a.Width, y, GridBrush, 1);
-            Label(value.ToString(units == "kg" ? "0.0" : "#,##0", CultureInfo.CurrentCulture), 0, y - 8, 49, TextAlignment.Right);
+            Label(value.ToString(units == "kg" ? "0.0" : "#,##0", CultureInfo.CurrentCulture), 0, y - 8, left - 11, TextAlignment.Right, weekly ? 12 : 11);
         }
+        if (weekly) return a;
         var days = (last - first).Days;
         var count = Math.Min(days, Math.Max(1, (int)(a.Width / 88)));
         for (var i = 0; i <= count; i++)

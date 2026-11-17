@@ -14,6 +14,7 @@ public partial class MainWindow : Window
 {
     private readonly FitnessStore store;
     private readonly Dictionary<ChartKind, ChartWindow> charts = new();
+    private WeeklyCaloriesWindow? weeklyCalories;
     private readonly DispatcherTimer dayTimer = new() { Interval = TimeSpan.FromMinutes(1) };
     private DateTime displayedDay;
     private double progress;
@@ -118,11 +119,26 @@ public partial class MainWindow : Window
         ShowHistoryPage();
         WeightPlot.Redraw(); CaloriePlot.Redraw(); ProgressPlot.Redraw();
         foreach (var window in charts.Values) window.Refresh();
+        weeklyCalories?.Refresh();
     }
 
     private static void SetMetric(TextBlock text, decimal value) { text.Text = $"{FitnessStore.Signed(value)} kcal"; text.SetResourceReference(TextBlock.ForegroundProperty, value >= 0 ? "AccentBrush" : "NegativeBrush"); }
     private void UpdateProgress() => ProgressFill.Width = Math.Max(0, ProgressTrack.ActualWidth * progress);
     private void ProgressTrackChanged(object sender, SizeChangedEventArgs e) => UpdateProgress();
+    private void ExpandWeeklyCalories(object sender, RoutedEventArgs e) => OpenWeeklyCalories();
+    internal WeeklyCaloriesWindow OpenWeeklyCalories()
+    {
+        if (weeklyCalories != null)
+        {
+            if (weeklyCalories.WindowState == WindowState.Minimized) weeklyCalories.WindowState = WindowState.Normal;
+            weeklyCalories.Activate();
+            return weeklyCalories;
+        }
+        weeklyCalories = new WeeklyCaloriesWindow(store) { Owner = this };
+        weeklyCalories.Closed += (_, _) => weeklyCalories = null;
+        weeklyCalories.Show();
+        return weeklyCalories;
+    }
     private void ExpandWeight(object sender, RoutedEventArgs e) => OpenChart(ChartKind.Weight);
     private void ExpandCalories(object sender, RoutedEventArgs e) => OpenChart(ChartKind.Calories);
     private void ExpandProgress(object sender, RoutedEventArgs e) => OpenChart(ChartKind.Progress);
@@ -215,12 +231,13 @@ internal static class NativeTheme
     [DllImport("dwmapi.dll")] private static extern int DwmSetWindowAttribute(IntPtr handle, int attribute, ref int value, int size);
     internal static void Apply(Window window) => window.SourceInitialized += (_, _) => Update(window);
 
-    // Dark title bar, tinted to the palette background on Windows 11 (older Windows ignores the tint).
+    // Match caption contrast and tint to the active palette (older Windows ignores the tint).
     internal static void Update(Window window)
     {
         var handle = new WindowInteropHelper(window).Handle;
         if (handle == IntPtr.Zero) return;
-        var dark = 1;
+        var backgroundColor = ((SolidColorBrush)ThemeManager.Brush("BackgroundBrush")).Color;
+        var dark = .2126 * backgroundColor.R + .7152 * backgroundColor.G + .0722 * backgroundColor.B < 128 ? 1 : 0;
         DwmSetWindowAttribute(handle, 20, ref dark, sizeof(int));
         if (ThemeManager.Brush("BackgroundBrush") is SolidColorBrush background)
         {

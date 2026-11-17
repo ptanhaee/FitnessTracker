@@ -20,55 +20,48 @@ internal sealed class PaletteSettings
 
 internal static class BuiltInPalettes
 {
-    public const string Moonlight = "Moonlight";
-    public const string MoonlightMidnight = "Moonlight Midnight";
-
-    // Earlier names, renamed in saved settings on load.
-    public static readonly Dictionary<string, string> Renamed = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["Space Within"] = Moonlight,
-        ["Space Within Midnight"] = MoonlightMidnight,
-    };
     public const string Original = "Original";
+    public const string Light = "Light";
+    public static readonly HashSet<string> Retired = new(StringComparer.OrdinalIgnoreCase)
+        { "Moonlight", "Moonlight Midnight", "Space Within", "Space Within Midnight" };
 
-    // Key order: Original | Moonlight (dark gray) | Moonlight Midnight. Colors come from the "Space Within" palette.
-    private static readonly (string Key, string Original, string Gray, string Midnight)[] Table =
+    // Original navy and mint, paired with a warm ivory and teal light palette.
+    private static readonly (string Key, string Original, string Light)[] Table =
     {
-        ("BackgroundBrush",    "#0C111B", "#18181C", "#080719"),
-        ("CardBrush",          "#151D2B", "#222228", "#100E32"),
-        ("InputBrush",         "#0E1522", "#1A1A1F", "#080719"),
-        ("BorderBrush",        "#293449", "#34343E", "#1F1B64"),
-        ("TextBrush",          "#EDF3FC", "#EDECF8", "#E7E6F8"),
-        ("MutedBrush",         "#9AAAC1", "#A9A8C4", "#B7B4EA"),
-        ("AccentBrush",        "#69E0C2", "#4CC9F0", "#4CC9F0"),
-        ("NegativeBrush",      "#FF8B9D", "#F84294", "#F84294"),
-        ("AccentTextBrush",    "#0B2823", "#031D25", "#031D25"),
-        ("MenuBrush",          "#1E2A3B", "#2A2A32", "#17154B"),
-        ("MenuHoverBrush",     "#34455D", "#3A3A46", "#27227D"),
-        ("QuietButtonBrush",   "#243247", "#2E2E38", "#1F1B64"),
-        ("SelectionBrush",     "#367B72", "#3F37C9", "#3F37C9"),
-        ("CheckedBrush",       "#21453F", "#17154B", "#1F1B64"),
-        ("ToolTipBrush",       "#253349", "#2A2A32", "#17154B"),
-        ("ScrollThumbBrush",   "#3B4B63", "#45454F", "#27227D"),
-        ("ProgressTrackBrush", "#2A3649", "#34343E", "#1F1B64"),
-        ("RowSelectedBrush",   "#253349", "#2E2E38", "#1F1B64"),
-        ("RowHoverBrush",      "#1E2A3B", "#28282F", "#17154B"),
-        ("RowDividerBrush",    "#263146", "#2E2E36", "#17154B"),
-        ("GoalPanelBrush",     "#213A37", "#17154B", "#1F1B64"),
-        ("ChartFillBrush",     "#193D39", "#063949", "#063949"),
-        ("GridBrush",          "#293449", "#303039", "#1F1B64"),
-        ("HighBrush",          "#FFB975", "#E956D3", "#E956D3"),
-        ("LowBrush",           "#80B7FF", "#4895EF", "#4895EF"),
-        ("MidpointBrush",      "#69E0C2", "#4CC9F0", "#4CC9F0"),
+        ("BackgroundBrush",    "#0C111B", "#F5F4EF"),
+        ("CardBrush",          "#151D2B", "#FFFFFF"),
+        ("InputBrush",         "#0E1522", "#F8FAF8"),
+        ("BorderBrush",        "#293449", "#D5DFDA"),
+        ("TextBrush",          "#EDF3FC", "#243D37"),
+        ("MutedBrush",         "#9AAAC1", "#5D7069"),
+        ("AccentBrush",        "#69E0C2", "#147565"),
+        ("NegativeBrush",      "#FF8B9D", "#B44860"),
+        ("AccentTextBrush",    "#0B2823", "#FFFFFF"),
+        ("MenuBrush",          "#1E2A3B", "#FFFFFF"),
+        ("MenuHoverBrush",     "#34455D", "#E8F1EC"),
+        ("QuietButtonBrush",   "#243247", "#EAF0EB"),
+        ("SelectionBrush",     "#367B72", "#A8D7C8"),
+        ("CheckedBrush",       "#21453F", "#DFEFE6"),
+        ("ToolTipBrush",       "#253349", "#FFFFFF"),
+        ("ScrollThumbBrush",   "#3B4B63", "#A6B9AE"),
+        ("ProgressTrackBrush", "#2A3649", "#DEE9E2"),
+        ("RowSelectedBrush",   "#253349", "#DFEFE6"),
+        ("RowHoverBrush",      "#1E2A3B", "#F0F6F2"),
+        ("RowDividerBrush",    "#263146", "#E3EAE5"),
+        ("GoalPanelBrush",     "#213A37", "#EDF5EE"),
+        ("ChartFillBrush",     "#193D39", "#DCEEE5"),
+        ("GridBrush",          "#293449", "#E1E8E3"),
+        ("HighBrush",          "#FFB975", "#AB622B"),
+        ("LowBrush",           "#80B7FF", "#366FB4"),
+        ("MidpointBrush",      "#69E0C2", "#147565"),
     };
 
     public static IEnumerable<string> Keys => Table.Select(t => t.Key);
 
     public static List<ColorPalette> All() => new()
     {
-        new ColorPalette { Name = Moonlight, Colors = Table.ToDictionary(t => t.Key, t => t.Gray) },
-        new ColorPalette { Name = MoonlightMidnight, Colors = Table.ToDictionary(t => t.Key, t => t.Midnight) },
         new ColorPalette { Name = Original, Colors = Table.ToDictionary(t => t.Key, t => t.Original) },
+        new ColorPalette { Name = Light, Colors = Table.ToDictionary(t => t.Key, t => t.Light) },
     };
 }
 
@@ -100,21 +93,15 @@ internal sealed class PaletteStore
         settings.Palettes = (settings.Palettes ?? new()).Where(p => p != null && !string.IsNullOrWhiteSpace(p.Name)).ToList();
 
         var changed = !File.Exists(path);
-        // Carry renamed built-ins (and the selection) over to their new names instead of duplicating them.
-        foreach (var palette in settings.Palettes)
-        {
-            if (!BuiltInPalettes.Renamed.TryGetValue(palette.Name, out var newName) || settings.Palettes.Any(p => Same(p.Name, newName))) continue;
-            if (Same(settings.Selected, palette.Name)) settings.Selected = newName;
-            palette.Name = newName;
-            changed = true;
-        }
+        // Remove retired built-ins from existing installations as well as fresh ones.
+        changed |= settings.Palettes.RemoveAll(p => BuiltInPalettes.Retired.Contains(p.Name)) > 0;
         var builtIns = BuiltInPalettes.All();
         foreach (var builtIn in builtIns.Where(b => !settings.Palettes.Any(p => Same(p.Name, b.Name))))
         {
             settings.Palettes.Add(builtIn);
             changed = true;
         }
-        // Fill colors missing from hand-edited palettes (built-in values first, otherwise Moonlight).
+        // Fill colors missing from hand-edited palettes (built-in values first, otherwise Original).
         foreach (var palette in settings.Palettes)
         {
             palette.Colors ??= new();
@@ -124,7 +111,7 @@ internal sealed class PaletteStore
         }
         if (!settings.Palettes.Any(p => Same(p.Name, settings.Selected)))
         {
-            settings.Selected = BuiltInPalettes.Moonlight;
+            settings.Selected = BuiltInPalettes.Original;
             changed = true;
         }
         var store = new PaletteStore(path, settings, canSave);

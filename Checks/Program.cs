@@ -98,28 +98,29 @@ internal static class Checks
             Check(window.DashboardScroll.VerticalOffset == 0, "Saving an entry does not scroll the dashboard");
             store.DeleteCalories(store.Data.Entries[^1]); Pump();
             var renameDir = Path.Combine(fixture, "palette-rename"); Directory.CreateDirectory(renameDir);
-            File.WriteAllText(Path.Combine(renameDir, PaletteStore.FileName), JsonSerializer.Serialize(new PaletteSettings { Selected = "Space Within Midnight", Palettes = BuiltInPalettes.All().Select(p => new ColorPalette { Name = p.Name switch { "Moonlight" => "Space Within", "Moonlight Midnight" => "Space Within Midnight", _ => p.Name }, Colors = p.Colors }).ToList() }));
+            File.WriteAllText(Path.Combine(renameDir, PaletteStore.FileName), JsonSerializer.Serialize(new PaletteSettings { Selected = "Moonlight Midnight", Palettes = new[] { "Moonlight", "Moonlight Midnight", "Space Within", "Space Within Midnight", "Original" }.Select(name => new ColorPalette { Name = name }).ToList() }));
             var renamed = PaletteStore.Load(renameDir);
-            Check(renamed.Palettes.Select(p => p.Name).SequenceEqual(new[] { "Moonlight", "Moonlight Midnight", "Original" }) && renamed.Current.Name == "Moonlight Midnight" &&
-                  PaletteStore.Load(renameDir).Current.Name == "Moonlight Midnight", "Saved Space Within palettes and selection are renamed to Moonlight");
+            Check(renamed.Palettes.Select(p => p.Name).SequenceEqual(new[] { "Original", "Light" }) && renamed.Current.Name == "Original" &&
+                  PaletteStore.Load(renameDir).Current.Name == "Original", "Retired palettes are removed and their selection migrates to Original on reload");
             Render(window, Path.Combine(artifacts, "dashboard.png"), 1440, 960);
             Render(window, Path.Combine(artifacts, "dashboard-small.png"), 1100, 720);
-            Check(ThemeManager.Store.Palettes.Select(p => p.Name).SequenceEqual(new[] { "Moonlight", "Moonlight Midnight", "Original" }) &&
-                  ThemeManager.Store.Current.Name == "Moonlight" && File.Exists(Path.Combine(paletteDir, PaletteStore.FileName)), "Palettes are saved and Moonlight is the default");
+            Check(ThemeManager.Store.Palettes.Select(p => p.Name).SequenceEqual(new[] { "Original", "Light" }) &&
+                  ThemeManager.Store.Current.Name == "Original" && File.Exists(Path.Combine(paletteDir, PaletteStore.FileName)), "Original and Light are saved and Original is the default");
             Check(ThemeManager.Store.Palettes.Single(p => p.Name == "Original").Colors["BackgroundBrush"] == "#0C111B" &&
                   ThemeManager.Store.Palettes.Single(p => p.Name == "Original").Colors["AccentBrush"] == "#69E0C2", "Original colors are kept as a palette");
             var chips = window.PalettePicker.Children.OfType<RadioButton>().ToList();
-            Check(chips.Count == 3 && chips[0].IsChecked == true, "Footer shows a chip per palette");
+            Check(chips.Count == 2 && chips[0].IsChecked == true, "Footer shows a chip per palette");
             foreach (var chip in chips.Skip(1))
             {
                 chip.IsChecked = true; Pump();
                 var name = ThemeManager.Store.Current.Name.Replace(" ", "-").ToLowerInvariant();
                 Render(window, Path.Combine(artifacts, $"dashboard-{name}.png"), 1440, 960);
             }
-            Check(PaletteStore.Load(paletteDir).Current.Name == "Original" && ((SolidColorBrush)window.Background).Color == (Color)ColorConverter.ConvertFromString("#0C111B"),
+            Render(window, Path.Combine(artifacts, "dashboard-light-small.png"), 1100, 720);
+            Check(PaletteStore.Load(paletteDir).Current.Name == "Light" && ((SolidColorBrush)window.Background).Color == (Color)ColorConverter.ConvertFromString("#F5F4EF"),
                 "Switching palettes recolors the open window and persists");
             chips[0].IsChecked = true; Pump();
-            Check(((SolidColorBrush)window.Background).Color == (Color)ColorConverter.ConvertFromString("#18181C"), "Switching back restores Moonlight");
+            Check(((SolidColorBrush)window.Background).Color == (Color)ColorConverter.ConvertFromString("#0C111B"), "Switching back restores Original");
             window.Width = 1440; window.Height = 960; Pump();
             Check(window.WeightPlot.Children.Count > 0 && window.CaloriePlot.Children.Count > 0 && window.ProgressPlot.Children.Count > 0, "All three charts render in the dashboard");
             var popout = window.OpenChart(ChartKind.Weight); Pump();
@@ -142,6 +143,7 @@ internal static class Checks
             var reopened = window.OpenChart(ChartKind.Weight); Check(reopened.IsVisible && !ReferenceEquals(popout, reopened), "Chart closes and reopens"); reopened.Close();
             foreach (var kind in new[] { ChartKind.Calories, ChartKind.Progress }) { var chart = window.OpenChart(kind); Pump(); Check(chart.IsVisible, kind + " pop-out opens"); chart.Close(); }
             MutationChecks.Run(fixture, artifacts, Check);
+            WeeklyChecks.Run(fixture, artifacts, Check);
             Check(window.HistoryList.Items.Count == 15, "History shows 15 entries per page");
             var firstPage = window.HistoryList.Items.Cast<object>().ToArray();
             window.NextPageButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); Pump();
