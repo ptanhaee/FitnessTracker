@@ -1,0 +1,8 @@
+System.IO.DirectoryNotFoundException: Could not find a part of the path 'C:\Users\ptanh\RiderProjects\Fitness Tracker\Fitness Tracker\bin\Debug\net8.0\Verification\fixture-b82bf0a3436447fcacabfd27605744a0\daily-deficit\WeightHistory.json.tmp'.
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.CreateFile(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options)
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.Open(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.File.OpenHandle(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize)
+   at System.IO.File.WriteToFile(String path, FileMode mode, String contents, Encoding encoding)
+   at FitnessTracker.FitnessStore.Save[T](String name, T value) in C:\Users\ptanh\RiderProjects\Fitness Tracker\Fitness Tracker\FitnessStore.cs:line 210
+   at FitnessTracker.FitnessStore.AddWeight(Decimal value, String type, DateTime date) in C:\Users\ptanh\RiderProjects\Fitness Tracker\Fitness Tracker\FitnessStore.cs:line 128
+   at Checks.Main() in C:\Users\ptanh\RiderProjects\Fitness Tracker\Fitness Tracker\Checks\Program.cs:line 83
