@@ -70,26 +70,42 @@ public sealed class FitnessChart : Canvas
 
     private void DrawCalories()
     {
-        var daily = store!.DailyTotals(DateTime.Today);
-        var first = DateTime.Today.AddDays(-13);
+        var today = DateTime.Today;
+        var daily = store!.DailyTotals(today);
+        var first = today.AddDays(-13);
         var values = Enumerable.Range(0, 14).Select(i => (Date: first.AddDays(i), Value: daily.GetValueOrDefault(first.AddDays(i)))).ToList();
         var minimum = Math.Min(0, (double)values.Min(p => p.Value));
         var maximum = Math.Max(0, (double)values.Max(p => p.Value));
         if (minimum == maximum) maximum = 500;
         var range = maximum - minimum;
-        var a = Axes(first, DateTime.Today, minimum < 0 ? minimum - range * .15 : 0, maximum + range * .15, "kcal", true);
-        var width = Math.Max(3, a.Width / 14 * .58);
-        Line(a.Left, a.Y(0), a.Left + a.Width, a.Y(0), Muted, 1);
+        var a = Axes(first, today, minimum < 0 ? minimum - range * .15 : 0, maximum + range * .15, "kcal", true);
+        var slot = a.Width / values.Count;
+        var width = Math.Max(3, slot * .58);
+        var baseline = a.Y(0);
+        Line(a.Left, baseline, a.Left + a.Width, baseline, Muted, 1);
         foreach (var value in values)
         {
             var x = a.X(value.Date);
             var y = a.Y((double)value.Value);
-            var baseline = a.Y(0);
+            if (value.Date == FitnessStore.WeekStart(value.Date))
+            {
+                var dot = new Ellipse { Width = 4, Height = 4, Fill = Muted, IsHitTestVisible = false };
+                SetLeft(dot, x - slot / 2 - dot.Width / 2);
+                SetTop(dot, baseline - dot.Height / 2);
+                Children.Add(dot);
+            }
             var color = value.Value >= 0 ? Mint : Rose;
             var rect = new Rectangle { Width = width, Height = Math.Max(2, Math.Abs(y - baseline)), RadiusX = 3, RadiusY = 3, Fill = value.Value == 0 ? Muted : color, IsHitTestVisible = false };
             SetLeft(rect, x - width / 2); SetTop(rect, Math.Min(y, baseline)); Children.Add(rect);
-            var hit = new Rectangle { Width = a.Width / 14, Height = a.Height, Fill = Brushes.Transparent,
-                ToolTip = $"{value.Date:MMM d, yyyy}\n{(daily.ContainsKey(value.Date) ? FitnessStore.Signed(value.Value) + " kcal" : "No entry recorded")}\n{(value.Value > 0 ? "Deficit" : value.Value < 0 ? "Surplus" : "")}" };
+            var details = "No entry recorded";
+            if (daily.ContainsKey(value.Date))
+            {
+                var balance = value.Value > 0 ? "Deficit" : value.Value < 0 ? "Surplus" : "Balanced";
+                var estimate = value.Value == 0 ? "No estimated weight change" : FitnessStore.EstimatedWeight(value.Value);
+                details = $"{FitnessStore.Signed(value.Value)} kcal · {balance}\n{estimate}";
+            }
+            var hit = new Rectangle { Width = slot, Height = a.Height, Fill = Brushes.Transparent,
+                ToolTip = $"{value.Date:ddd, MMM d, yyyy}\n{details}" };
             SetLeft(hit, x - hit.Width / 2); SetTop(hit, a.Top); ToolTipService.SetInitialShowDelay(hit, 0); Children.Add(hit);
         }
     }

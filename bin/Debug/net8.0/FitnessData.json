@@ -2,10 +2,6 @@
   "LegacyCalories": 0,
   "Entries": [
     {
-      "Date": "2026-11-10T00:00:00",
-      "Calories": 300
-    },
-    {
       "Date": "2026-11-11T00:00:00",
       "Calories": 328
     },
@@ -68,6 +64,11 @@
       "Id": "be3233357f7444d4b7754ce0e4a867cc",
       "Date": "2026-11-23T00:00:00",
       "Calories": 200
+    },
+    {
+      "Id": "a707cee90cc44829ad413effc7ed7c5c",
+      "Date": "2026-11-24T00:00:00",
+      "Calories": 785
     }
   ]
 }
