@@ -51,9 +51,8 @@ internal static class BuiltInPalettes
         ("GoalPanelBrush",     "#213A37", "#EDF5EE"),
         ("ChartFillBrush",     "#193D39", "#DCEEE5"),
         ("GridBrush",          "#293449", "#E1E8E3"),
-        ("HighBrush",          "#FFB975", "#AB622B"),
         ("LowBrush",           "#80B7FF", "#366FB4"),
-        ("MidpointBrush",      "#69E0C2", "#147565"),
+        ("WeeklyAverageBrush", "#D0AEFF", "#7547A6"),
     };
 
     public static IEnumerable<string> Keys => Table.Select(t => t.Key);

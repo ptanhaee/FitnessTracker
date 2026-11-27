@@ -29,7 +29,8 @@
         "GridBrush": "#293449",
         "HighBrush": "#FFB975",
         "LowBrush": "#80B7FF",
-        "MidpointBrush": "#69E0C2"
+        "MidpointBrush": "#69E0C2",
+        "WeeklyAverageBrush": "#D0AEFF"
       }
     },
     {
@@ -60,7 +61,8 @@
         "GridBrush": "#E1E8E3",
         "HighBrush": "#AB622B",
         "LowBrush": "#366FB4",
-        "MidpointBrush": "#147565"
+        "MidpointBrush": "#147565",
+        "WeeklyAverageBrush": "#7547A6"
       }
     }
   ]

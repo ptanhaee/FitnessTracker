@@ -14,9 +14,7 @@ public sealed class FitnessChart : Canvas
     // Colors come from the active palette (see Palettes.cs); charts redraw when the palette changes.
     internal static Brush Mint => ThemeManager.Brush("AccentBrush");
     internal static Brush Rose => ThemeManager.Brush("NegativeBrush");
-    internal static Brush Orange => ThemeManager.Brush("HighBrush");
     internal static Brush Blue => ThemeManager.Brush("LowBrush");
-    internal static Brush Midpoint => ThemeManager.Brush("MidpointBrush");
     internal static Brush Muted => ThemeManager.Brush("MutedBrush");
     internal static Brush GridBrush => ThemeManager.Brush("GridBrush");
     private FitnessStore? store;
@@ -56,16 +54,16 @@ public sealed class FitnessChart : Canvas
 
     private void DrawWeight()
     {
-        var data = WeightChartData.Create(store!.Weights.Entries, DateTime.Today);
-        var all = data.High.Concat(data.Low).ToList();
-        if (all.Count == 0) { Empty("Your weight story starts here.", "Add a weigh-in to see your trend."); return; }
-        var min = all.Min(p => p.Kilograms);
-        var max = all.Max(p => p.Kilograms);
+        var data = WeightChartData.Create(store!.Weights, DateTime.Today);
+        if (data.Low.Count == 0) { Empty("Your weight story starts here.", "Add a weigh-in to see your trend."); return; }
+        var min = data.Low.Min(p => p.Kilograms);
+        var max = data.Low.Max(p => p.Kilograms);
         var padding = Math.Max(0.5, (max - min) * .18);
-        var axis = Axes(all.Min(p => p.Date), all.Max(p => p.Date), Math.Max(0, min - padding), max + padding, "kg");
-        DrawSeries(data.High.Select(p => (p.Date, p.Kilograms)).ToList(), axis, Orange, "H", "kg");
-        DrawSeries(data.Low.Select(p => (p.Date, p.Kilograms)).ToList(), axis, Blue, "L", "kg");
-        DrawSeries(data.Midpoint.Select(p => (p.Date, p.Kilograms)).ToList(), axis, Midpoint, "Midpoint (interpolated)", "kg", true);
+        var axis = Axes(data.WeeklyAverage[0].Date, data.Low[^1].Date, Math.Max(0, min - padding), max + padding, "kg");
+        DrawSeries(data.Low.Select(p => (p.Date, p.Kilograms)).ToList(), axis, Blue, "L weigh-in", "kg");
+        DrawSeries(data.WeeklyAverage.Select(p => (p.Date, p.Kilograms)).ToList(), axis,
+            ThemeManager.Brush("WeeklyAverageBrush"), "Weekly average", "kg",
+            DashStyles.Dash.Dashes, dateFormat: "'Week of' MMM d, yyyy");
     }
 
     private void DrawCalories()
@@ -200,20 +198,21 @@ public sealed class FitnessChart : Canvas
         return a;
     }
 
-    private void DrawSeries(IReadOnlyList<(DateTime Date, double Value)> points, PlotAxes a, Brush color, string name, string units, bool dashed = false)
+    private void DrawSeries(IReadOnlyList<(DateTime Date, double Value)> points, PlotAxes a, Brush color, string name, string units,
+        DoubleCollection? dashPattern = null, string dateFormat = "MMM d, yyyy")
     {
         if (points.Count > 1)
         {
             var line = new Polyline { Stroke = color, StrokeThickness = 2.5, StrokeLineJoin = PenLineJoin.Round, IsHitTestVisible = false,
                 Points = new PointCollection(points.Select(p => new Point(a.X(p.Date), a.Y(p.Value)))) };
-            if (dashed) line.StrokeDashArray = new DoubleCollection { 3, 3 };
+            line.StrokeDashArray = dashPattern;
             Children.Add(line);
         }
         foreach (var point in points)
         {
             var marker = new Ellipse { Width = 8, Height = 8, Fill = color, Stroke = ThemeManager.Brush("CardBrush"), StrokeThickness = 1.5, IsHitTestVisible = false };
             SetLeft(marker, a.X(point.Date) - 4); SetTop(marker, a.Y(point.Value) - 4); Children.Add(marker);
-            var hit = new Ellipse { Width = 20, Height = 20, Fill = Brushes.Transparent, ToolTip = $"{name}\n{point.Date:MMM d, yyyy}\n{point.Value:#,##0.##} {units}" };
+            var hit = new Ellipse { Width = 20, Height = 20, Fill = Brushes.Transparent, ToolTip = $"{name}\n{point.Date.ToString(dateFormat)}\n{point.Value:#,##0.##} {units}" };
             ToolTipService.SetInitialShowDelay(hit, 0);
             SetLeft(hit, a.X(point.Date) - 10); SetTop(hit, a.Y(point.Value) - 10); Children.Add(hit);
         }
@@ -259,9 +258,8 @@ internal sealed class ChartWindow : Window
         void LegendItem(string text, string brush) { var run = new System.Windows.Documents.Run(text); run.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty, brush); legend.Inlines.Add(run); }
         if (kind == ChartKind.Weight)
         {
-            LegendItem("● H     ", "HighBrush");
-            LegendItem("● L     ", "LowBrush");
-            LegendItem("– – Midpoint (interpolated)", "MidpointBrush");
+            LegendItem("● L weigh-in     ", "LowBrush");
+            LegendItem("– –●– – Weekly average", "WeeklyAverageBrush");
         }
         else if (kind == ChartKind.Calories) { LegendItem("Last 14 days     ", "MutedBrush"); LegendItem("● Deficit (+)     ", "AccentBrush"); LegendItem("● Surplus (−)", "NegativeBrush"); }
         else legend.Text = "All recorded days · Includes your starting balance";
@@ -270,7 +268,7 @@ internal sealed class ChartWindow : Window
         var border = new Border { CornerRadius = new CornerRadius(14), Padding = new Thickness(18), Child = chart };
         border.SetResourceReference(Border.BackgroundProperty, "CardBrush");
         Grid.SetRow(border, 2); grid.Children.Add(border);
-        var note = new TextBlock { Text = kind == ChartKind.Weight ? "Hover over a point for details. Midpoint uses linear interpolation within overlapping H/L dates.\nFor repeated measurements of the same type on a date, the last entry is shown." : "Hover for details. This chart updates when you save an entry in the dashboard.", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 14, 0, 0), FontSize = 12 };
+        var note = new TextBlock { Text = kind == ChartKind.Weight ? "Weekly averages use the last L weigh-in on each recorded day, Monday through Sunday. Hover over a point for details." : "Hover for details. This chart updates when you save an entry in the dashboard.", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 14, 0, 0), FontSize = 12 };
         note.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
         Grid.SetRow(note, 3); grid.Children.Add(note);
         Content = grid;

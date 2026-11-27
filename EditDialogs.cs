@@ -77,21 +77,12 @@ internal sealed class EditEntryWindow : FormWindow
     private readonly CalorieEntry? calories;
     private readonly WeightEntry? weight;
     internal readonly TextBox ValueInput, DateInput;
-    internal readonly RadioButton LowType = new() { Content = "L · Low", GroupName = "EditWeightType", Margin = new Thickness(0, 0, 8, 0), MinWidth = 110 };
-    internal readonly RadioButton HighType = new() { Content = "H · High", GroupName = "EditWeightType", MinWidth = 110 };
 
     internal EditEntryWindow(FitnessStore store, CalorieEntry? calories, WeightEntry? weight)
-        : base(weight == null ? "Edit calorie entry" : "Edit weigh-in", weight == null ? "Positive calories mean a deficit; negative calories mean a surplus." : "Update the recorded weight, measurement type, or date.", "Save changes")
+        : base(weight == null ? "Edit calorie entry" : "Edit weigh-in", weight == null ? "Positive calories mean a deficit; negative calories mean a surplus." : "Update the recorded weight or date.", "Save changes")
     {
         this.store = store; this.calories = calories; this.weight = weight;
         ValueInput = Input(weight == null ? "Net calories (kcal)" : "Weight (kg)", (weight?.WeightKg ?? calories!.Calories).ToString(CultureInfo.CurrentCulture));
-        if (weight != null)
-        {
-            var types = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 12, 0, 0) };
-            LowType.IsChecked = !string.Equals(weight.Type, "H", StringComparison.OrdinalIgnoreCase);
-            HighType.IsChecked = !LowType.IsChecked;
-            types.Children.Add(LowType); types.Children.Add(HighType); Fields.Children.Add(types);
-        }
         DateInput = Input("Entry date · YYYY-MM-DD", (weight?.Date ?? calories!.Date).ToString("yyyy-MM-dd"));
         Loaded += (_, _) => { ValueInput.Focus(); ValueInput.SelectAll(); };
     }
@@ -99,7 +90,7 @@ internal sealed class EditEntryWindow : FormWindow
     {
         var number = Number(ValueInput, weight == null ? "calorie amount" : "weight");
         var date = Date(DateInput);
-        if (weight != null) store.UpdateWeight(weight, number, HighType.IsChecked == true ? "H" : "L", date);
+        if (weight != null) store.UpdateWeight(weight, number, date);
         else store.UpdateCalories(calories!, number, date);
     }
 }
@@ -137,7 +128,7 @@ internal sealed class EditGoalsWindow : FormWindow
         : base("Edit your goals", "Enter a calorie goal or a target weight, not both. A target weight sets the calorie goal from your latest L weigh-in.", "Save goals")
     {
         this.store = store;
-        latestLow = store.LatestWeight(DateTime.Today, "L");
+        latestLow = store.LatestWeight(DateTime.Today);
         CalorieGoalInput = Input("Calorie goal (kcal)", Format(store.Goals.CalorieGoal));
         WeightGoalInput = Input("Target weight (kg)", Format(store.Goals.TargetWeightKg));
         Fields.Children.Add(GoalHint);

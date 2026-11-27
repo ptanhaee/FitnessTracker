@@ -1,0 +1,70 @@
+{
+  "LegacyCalories": 0,
+  "Entries": [
+    {
+      "Id": "a7f72c6791e1464481194de54d64fcb4",
+      "Date": "2026-11-13T00:00:00",
+      "Calories": 1250
+    },
+    {
+      "Id": "eacc00443e834be29337f8dcc4c9e7a4",
+      "Date": "2026-11-14T00:00:00",
+      "Calories": 800
+    },
+    {
+      "Id": "dd3baa5bd981423ba5345611d3c67672",
+      "Date": "2026-11-15T00:00:00",
+      "Calories": 500
+    },
+    {
+      "Id": "be318331eb3d430badea57f5283a1335",
+      "Date": "2026-11-16T00:00:00",
+      "Calories": 1100
+    },
+    {
+      "Id": "dc544ec4a0a64efd84a0430b4ebc7c28",
+      "Date": "2026-11-17T00:00:00",
+      "Calories": 900
+    },
+    {
+      "Id": "21f2d15811cf469aa38adfd845654165",
+      "Date": "2026-11-18T00:00:00",
+      "Calories": 900
+    },
+    {
+      "Id": "13ba06e1c15143ccad818c3107035d31",
+      "Date": "2026-11-19T00:00:00",
+      "Calories": 250
+    },
+    {
+      "Id": "0cb0ad7fb3cf4da1aa852548f7170da3",
+      "Date": "2026-11-21T00:00:00",
+      "Calories": 1275
+    },
+    {
+      "Id": "00d5c85fbf754cfda640d55ba181883f",
+      "Date": "2026-11-22T00:00:00",
+      "Calories": 1000
+    },
+    {
+      "Id": "be3233357f7444d4b7754ce0e4a867cc",
+      "Date": "2026-11-23T00:00:00",
+      "Calories": 200
+    },
+    {
+      "Id": "a707cee90cc44829ad413effc7ed7c5c",
+      "Date": "2026-11-24T00:00:00",
+      "Calories": 785
+    },
+    {
+      "Id": "7e0c7b0617a645e7884eb4b2575b75e6",
+      "Date": "2026-11-25T00:00:00",
+      "Calories": 500
+    },
+    {
+      "Id": "40ffe02b7d8548adaa54efbce7116878",
+      "Date": "2026-11-26T00:00:00",
+      "Calories": -125
+    }
+  ]
+}

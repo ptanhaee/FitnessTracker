@@ -23,15 +23,15 @@ internal static class MutationChecks
         check(new FitnessStore(path).AllCalories.Count(e => e.Calories == 88) == 2, "Backdating an edit preserves a distinct identical archived entry");
         store.DeleteCalories(store.Archive.Entries.Single());
         check(new FitnessStore(path).AllCalories.Single().Calories == 88, "Archived deletion removes only its selected record");
-        store.AddWeight(95, "H", today); store.AddWeight(95, "H", today);
+        store.AddWeight(95, today); store.AddWeight(95, today);
         var originalWeight = store.Weights.Entries[0];
-        store.UpdateWeight(store.Weights.Entries[1], 93, "L", today.AddDays(-1));
+        store.UpdateWeight(store.Weights.Entries[1], 93, today.AddDays(-1));
         var reload = new FitnessStore(path);
-        check(reload.Weights.Entries.Count == 2 && reload.Weights.Entries[1].WeightKg == 93 && reload.Weights.Entries[1].Type == "L", "Weight edits persist the value, type, and date");
+        check(reload.Weights.Entries.Count == 2 && reload.Weights.Entries[1].WeightKg == 93 && reload.Weights.Entries[1].Type == "L", "Weight edits preserve the L type and persist the value and date");
         store.DeleteWeight(originalWeight);
         check(new FitnessStore(path).LatestWeight(today)!.WeightKg == 93, "Deleting latest weight reveals the preceding measurement");
         var before = File.ReadAllText(Path.Combine(path, "WeightHistory.json"));
-        try { store.UpdateWeight(store.Weights.Entries[0], -1, "L", today); } catch (ArgumentException) { }
+        try { store.UpdateWeight(store.Weights.Entries[0], -1, today); } catch (ArgumentException) { }
         check(File.ReadAllText(Path.Combine(path, "WeightHistory.json")) == before, "Invalid edits do not write history");
         using (File.Open(Path.Combine(path, "WeightHistory.json"), FileMode.Open, FileAccess.Read, FileShare.None))
         {

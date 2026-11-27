@@ -78,10 +78,8 @@ internal sealed class FitnessStore
     public IEnumerable<CalorieEntry> AllCalories => Archive.Entries.Concat(Data.Entries);
     public Dictionary<DateTime, decimal> DailyTotals(DateTime today) => AllCalories
         .Where(e => e.Date.Date <= today.Date).GroupBy(e => e.Date.Date).ToDictionary(g => g.Key, g => g.Sum(e => e.Calories));
-    // Latest measurement up to today; pass "H" or "L" to restrict it to one type. The last same-day entry wins.
-    public WeightEntry? LatestWeight(DateTime today, string? type = null) => Weights.Entries.Select((e, i) => (e, i))
-        .Where(x => x.e.Date.Date <= today.Date && (type == null || string.Equals(x.e.Type, type, StringComparison.OrdinalIgnoreCase)))
-        .OrderByDescending(x => x.e.Date.Date).ThenByDescending(x => x.i).Select(x => x.e).FirstOrDefault();
+    public WeightEntry? LatestWeight(DateTime today) => Weights.LowEntries
+        .Where(e => e.Date.Date <= today.Date).OrderBy(e => e.Date.Date).LastOrDefault();
     // Calories to lose to go from a current weight to a target weight, at 7,700 kcal/kg, rounded to whole kcal.
     public static decimal CaloriesToReach(decimal currentKg, decimal targetKg) =>
         Math.Round((currentKg - targetKg) * CaloriesPerKg, 0, MidpointRounding.AwayFromZero);
@@ -120,11 +118,11 @@ internal sealed class FitnessStore
         Changed?.Invoke();
     }
 
-    public void AddWeight(decimal value, string type, DateTime date)
+    public void AddWeight(decimal value, DateTime date)
     {
         ValidateDate(date);
-        if (value <= 0 || (type != "H" && type != "L")) throw new ArgumentException("Enter a positive weight and select H or L.");
-        var next = new WeightHistory { Entries = Weights.Entries.Append(new WeightEntry { Date = date.Date, WeightKg = value, Type = type }).ToList() };
+        if (value <= 0) throw new ArgumentException("Enter a positive weight in kilograms.");
+        var next = new WeightHistory { Entries = Weights.Entries.Append(new WeightEntry { Date = date.Date, WeightKg = value }).ToList() };
         Save("WeightHistory.json", next);
         Weights = next;
         Changed?.Invoke();
@@ -170,11 +168,11 @@ internal sealed class FitnessStore
         }
         Changed?.Invoke();
     }
-    public void UpdateWeight(WeightEntry entry, decimal value, string type, DateTime date)
+    public void UpdateWeight(WeightEntry entry, decimal value, DateTime date)
     {
         ValidateDate(date);
-        if (value <= 0 || (type != "H" && type != "L")) throw new ArgumentException("Enter a positive weight and select H or L.");
-        ChangeWeight(entry, new WeightEntry { Date = date.Date, WeightKg = value, Type = type });
+        if (value <= 0) throw new ArgumentException("Enter a positive weight in kilograms.");
+        ChangeWeight(entry, new WeightEntry { Date = date.Date, WeightKg = value, Type = entry.Type });
     }
     public void DeleteWeight(WeightEntry entry) => ChangeWeight(entry, null);
     private void ChangeWeight(WeightEntry entry, WeightEntry? replacement)

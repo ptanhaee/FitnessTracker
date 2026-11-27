@@ -16,7 +16,7 @@
 | Weekly history aggregation | `WeeklyCalorieData.cs`: `Create`, `WeeklyCalorieSummary` |
 | Weekly history list, paging, chart selection | `WeeklyCaloriesWindow.xaml` and `.xaml.cs`: `Refresh`, `ShowPage`, `WeeklyRow` (12 weeks/page) |
 | All charts and chart pop-outs | `FitnessChart.cs`: `ChartKind`, `Redraw`, `DrawWeight`, `DrawCalories`, `DrawProgress`, `DrawWeeklyCalories`, `Axes`, `ChartWindow` |
-| H/L interpolation and same-day chart samples | `WeightChartData.cs`: `Create`; `WeightEntry.cs`: weight JSON models |
+| Daily L readings and weekly weight averages | `WeightChartData.cs`: `Create`; `WeightEntry.cs`: weight JSON models |
 | Load, save, archive, edit/delete entries, goals | `FitnessStore.cs`: models, `AllCalories`, `DailyTotals`, `LatestWeight`, `Add*`, `Update*`, `Delete*`, `Save` |
 | Entry edit/delete dialogs and goal editor | `EditDialogs.cs`: `EditEntryWindow`, `DeleteEntryWindow`, `EditGoalsWindow` |
 | Theme resources, control templates | `Theme.xaml`; `Palettes.cs`: `BuiltInPalettes`, `PaletteStore`, `ThemeManager` |
@@ -37,7 +37,7 @@ Persistent files live **beside the executable**, normally `bin/Debug/net8.0`:
 | --- | --- |
 | `FitnessData.json` | Recent calorie entries plus undated `LegacyCalories` |
 | `FitnessArchive.json` | Older calorie entries and tracking start date |
-| `WeightHistory.json` | H/L weigh-ins |
+| `WeightHistory.json` | L weigh-ins and historical H records |
 | `FitnessGoals.json` | Calorie goal, target weight/date |
 | `FitnessSettings.txt` | Optional legacy balance imported only if no FitnessData JSON |
 | `ColorPalettes.json` | Palettes and selected theme |
@@ -50,7 +50,7 @@ Do not overwrite personal JSON or `.bak` files, delete `bin`, or run `dotnet cle
 - Weeks start Monday (`FitnessStore.WeekStart`). Past weekly averages divide by 7; current averages divide by elapsed calendar days including today. Logged days count distinct dates, including zero balances. Missing weeks are displayed, not silently omitted.
 - Weekly history starts at the earliest dated calorie entry and excludes undated `LegacyCalories`; cumulative progress includes that balance. Weekly chart is chronological for the displayed page; list is newest first.
 - Estimated weight uses 7,700 kcal/kg. `EstimatedWeight`/`Kilograms` centralize formatting (grams below 1 kg).
-- Weight goal calculations use latest **L**, not H; last same-day entry wins. Weight chart picks latest of each type per day and interpolates midpoint only over overlapping dates.
+- Weight goal calculations use latest **L**, not H; last same-day entry wins. The chart plots the last L reading per day and its Monday–Sunday weekly average. History shows L weigh-ins. Stored H records are preserved on save.
 - Use dynamic brush resources and refresh custom Canvas charts on palette changes. No extra chart dependencies needed.
 
 ## Verification shortcuts

@@ -1,0 +1,65 @@
+{
+  "Selected": "Original",
+  "Palettes": [
+    {
+      "Name": "Original",
+      "Colors": {
+        "BackgroundBrush": "#0C111B",
+        "CardBrush": "#151D2B",
+        "InputBrush": "#0E1522",
+        "BorderBrush": "#293449",
+        "TextBrush": "#EDF3FC",
+        "MutedBrush": "#9AAAC1",
+        "AccentBrush": "#69E0C2",
+        "NegativeBrush": "#FF8B9D",
+        "AccentTextBrush": "#0B2823",
+        "MenuBrush": "#1E2A3B",
+        "MenuHoverBrush": "#34455D",
+        "QuietButtonBrush": "#243247",
+        "SelectionBrush": "#367B72",
+        "CheckedBrush": "#21453F",
+        "ToolTipBrush": "#253349",
+        "ScrollThumbBrush": "#3B4B63",
+        "ProgressTrackBrush": "#2A3649",
+        "RowSelectedBrush": "#253349",
+        "RowHoverBrush": "#1E2A3B",
+        "RowDividerBrush": "#263146",
+        "GoalPanelBrush": "#213A37",
+        "ChartFillBrush": "#193D39",
+        "GridBrush": "#293449",
+        "LowBrush": "#80B7FF",
+        "WeeklyAverageBrush": "#D0AEFF"
+      }
+    },
+    {
+      "Name": "Light",
+      "Colors": {
+        "BackgroundBrush": "#F5F4EF",
+        "CardBrush": "#FFFFFF",
+        "InputBrush": "#F8FAF8",
+        "BorderBrush": "#D5DFDA",
+        "TextBrush": "#243D37",
+        "MutedBrush": "#5D7069",
+        "AccentBrush": "#147565",
+        "NegativeBrush": "#B44860",
+        "AccentTextBrush": "#FFFFFF",
+        "MenuBrush": "#FFFFFF",
+        "MenuHoverBrush": "#E8F1EC",
+        "QuietButtonBrush": "#EAF0EB",
+        "SelectionBrush": "#A8D7C8",
+        "CheckedBrush": "#DFEFE6",
+        "ToolTipBrush": "#FFFFFF",
+        "ScrollThumbBrush": "#A6B9AE",
+        "ProgressTrackBrush": "#DEE9E2",
+        "RowSelectedBrush": "#DFEFE6",
+        "RowHoverBrush": "#F0F6F2",
+        "RowDividerBrush": "#E3EAE5",
+        "GoalPanelBrush": "#EDF5EE",
+        "ChartFillBrush": "#DCEEE5",
+        "GridBrush": "#E1E8E3",
+        "LowBrush": "#366FB4",
+        "WeeklyAverageBrush": "#7547A6"
+      }
+    }
+  ]
+}

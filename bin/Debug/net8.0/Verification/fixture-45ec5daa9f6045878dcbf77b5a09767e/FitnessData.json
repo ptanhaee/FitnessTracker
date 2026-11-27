@@ -1,0 +1,15 @@
+{
+  "LegacyCalories": 100,
+  "Entries": [
+    {
+      "Id": "02a1add9f3c94898a52dcf47c72af2a9",
+      "Date": "2026-11-26T00:00:00-05:00",
+      "Calories": 250
+    },
+    {
+      "Id": "be49ce17bfca4132a7b4995eefa01fdf",
+      "Date": "2026-11-26T00:00:00-05:00",
+      "Calories": -75
+    }
+  ]
+}

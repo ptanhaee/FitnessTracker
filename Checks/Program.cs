@@ -36,20 +36,31 @@ internal static class Checks
             Check(reloaded.DailyTotals(today)[today] == 175 && reloaded.AllCalories.Sum(e => e.Calories) == 225, "Signed and backdated entries survive reload");
             Check(reloaded.Archive.Entries.Count == 1 && reloaded.Data.Entries.Count == 2, "Old entries are archived");
             Check(File.Exists(Path.Combine(fixture, "FitnessData.json.bak")), "Replaced history has a backup");
-            reloaded.AddWeight(95, "H", today.AddDays(-2));
-            reloaded.AddWeight(93, "L", today);
-            reloaded.AddWeight(94, "L", today);
+            reloaded.AddWeight(95, today.AddDays(-2));
+            reloaded.AddWeight(93, today);
+            reloaded.AddWeight(94, today);
             Check(new FitnessStore(fixture).LatestWeight(today)!.WeightKg == 94, "Last same-day measurement wins");
-            Throws(() => reloaded.AddWeight(0, "L", today), "Zero weight rejected");
-            Throws(() => reloaded.AddWeight(95, "L", today.AddDays(1)), "Future weight rejected");
+            Throws(() => reloaded.AddWeight(0, today), "Zero weight rejected");
+            Throws(() => reloaded.AddWeight(95, today.AddDays(1)), "Future weight rejected");
             Throws(() => reloaded.AddCalories(50, today.AddDays(1)), "Future calorie date rejected");
 
             WeightEntry E(int days, decimal kg, string type) => new() { Date = today.AddDays(days), WeightKg = kg, Type = type };
-            var interpolated = WeightChartData.Create(new[] { E(-10, 100, "H"), E(0, 90, "H"), E(-8, 90, "L"), E(-2, 84, "L") }, today);
-            Check(interpolated.Midpoint.Select(p => p.Kilograms).SequenceEqual(new[] { 94d, 88d }), "H/L interpolation remains correct");
-            var duplicate = WeightChartData.Create(new[] { E(0, 94, "l"), E(0, 93, "L"), E(1, 88, "H") }, today);
-            Check(duplicate.Low.Single().Kilograms == 93 && duplicate.High.Count == 0 && duplicate.Midpoint.Count == 0, "Duplicate types and future measurements handled");
-            Check(WeightChartData.Create(Array.Empty<WeightEntry>(), today).High.Count == 0, "Empty chart data supported");
+            var highOnly = new WeightHistory { Entries = new() { E(0, 100, "H") } };
+            var retired = WeightChartData.Create(highOnly, today);
+            Check(retired.Low.Count == 0 && retired.WeeklyAverage.Count == 0, "An H-only history produces an empty weight chart");
+            var samples = new WeightHistory { Entries = new() { E(0, 94, "l"), E(0, 93, "L"), E(1, 88, "L"), E(0, 99, "H") } };
+            var duplicate = WeightChartData.Create(samples, today);
+            Check(duplicate.Low.Single().Kilograms == 93 && duplicate.WeeklyAverage.Single().Kilograms == 93, "Both series use the last eligible L reading each day");
+            Check(WeightChartData.Create(new WeightHistory(), today).Low.Count == 0, "Empty chart data supported");
+            var monday = new DateTime(2025, 12, 29);
+            WeightEntry W(int offset, decimal kg, string type) => new() { Date = monday.AddDays(offset), WeightKg = kg, Type = type };
+            var weekly = WeightChartData.Create(new WeightHistory { Entries = new() {
+                W(15, 82, "L"), W(0, 100, "H"), W(-1, 96, "L"), W(0, 92, "H"),
+                W(0, 80, "L"), W(6, 86, "L"), W(17, 78, "L")
+            } }, monday.AddDays(16));
+            Check(weekly.WeeklyAverage.SequenceEqual(new[] {
+                new WeightPoint(monday.AddDays(-7), 96), new WeightPoint(monday, 83), new WeightPoint(monday.AddDays(14), 82)
+            }), "Weekly weight averages use recorded L values across year boundaries, gaps, and a partial week");
             Check(FitnessStore.EstimatedWeight(3465).StartsWith("450 g / ") && FitnessStore.EstimatedWeight(-2000).StartsWith("260 g / ") &&
                   FitnessStore.EstimatedWeight(-2000).Contains("gained") && FitnessStore.EstimatedWeight(0).StartsWith("0 g / "),
                 "Estimated weight changes under 1 kg show in grams");
@@ -78,19 +89,20 @@ internal static class Checks
             var paletteDir = Path.Combine(fixture, "palettes"); Directory.CreateDirectory(paletteDir);
             ThemeManager.Store = PaletteStore.Load(paletteDir);
             var deficitPath = Path.Combine(fixture, "daily-deficit"); Directory.CreateDirectory(deficitPath);
+            File.WriteAllText(Path.Combine(deficitPath, "WeightHistory.json"), JsonSerializer.Serialize(highOnly));
             var deficitStore = new FitnessStore(deficitPath);
             deficitStore.Goals.TargetWeightKg = 80;
             deficitStore.Goals.TargetDate = today.AddDays(10);
-            deficitStore.AddWeight(95, "H", today);
             var deficitWindow = new MainWindow(deficitStore);
             Check(deficitWindow.RequiredDeficit.Text == "Add an L weight for your daily estimate.", "Daily deficit requires an L weight even when H exists");
-            deficitStore.AddWeight(90, "L", today.AddDays(-1));
-            deficitStore.AddWeight(91, "H", today);
+            Check(deficitWindow.HistoryList.Items.Count == 0, "Historical H entries are hidden from entry history");
+            deficitStore.AddWeight(90, today.AddDays(-1));
             Check(deficitWindow.WeightGoalSummary.Text.Contains("from 90 kg") && deficitWindow.RequiredDeficit.Text == $"{7000:N0} kcal/day to target", "Daily deficit uses latest L weight and its date despite a newer H weight");
-            deficitStore.AddWeight(89, "L", today.AddDays(-1));
+            deficitStore.AddWeight(89, today.AddDays(-1));
             Check(deficitWindow.WeightGoalSummary.Text.Contains("from 89 kg"), "Daily deficit uses the last L entry on the same day");
             deficitStore.DeleteWeight(deficitStore.Weights.Entries[^1]);
             Check(deficitWindow.WeightGoalSummary.Text.Contains("from 90 kg"), "Deleting the latest L refreshes the daily deficit from the previous L");
+            Check(new FitnessStore(deficitPath).Weights.Entries.Any(e => e.Type == "H" && e.WeightKg == 100), "Saving and deleting L weigh-ins preserves legacy H data on disk");
             deficitWindow.Close();
             var window = new MainWindow(store); window.Show(); Pump();
             Check(window.DashboardScroll.VerticalOffset == 0, "Dashboard opens scrolled to the top");
@@ -198,7 +210,7 @@ internal static class Checks
             Check(window.GoalProgressText.Text.Contains("50,000"), "Goal edits immediately update dashboard labels");
             goals.Close();
 
-            var latestLow = store.LatestWeight(today, "L")!;
+            var latestLow = store.LatestWeight(today)!;
             var byWeight = new EditGoalsWindow(store) { Owner = window }; byWeight.Show(); Pump();
             byWeight.WeightGoalInput.Text = (latestLow.WeightKg - 1.5m).ToString(CultureInfo.CurrentCulture);
             var expectedCalories = FitnessStore.CaloriesToReach(latestLow.WeightKg, latestLow.WeightKg - 1.5m);

@@ -53,9 +53,9 @@ public partial class MainWindow : Window
     {
         foreach (var palette in ThemeManager.Store.Palettes)
         {
-            // Swatches show each palette's own colors: background, accent, H, L.
+            // Swatches show each palette's own colors: background, accent, weight, weekly average.
             var swatches = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 7, 0) };
-            foreach (var key in new[] { "BackgroundBrush", "AccentBrush", "HighBrush", "LowBrush" })
+            foreach (var key in new[] { "BackgroundBrush", "AccentBrush", "LowBrush", "WeeklyAverageBrush" })
                 swatches.Children.Add(new Border
                 {
                     Width = 10, Height = 10, CornerRadius = new CornerRadius(5), Margin = new Thickness(0, 0, 2, 0), BorderThickness = new Thickness(1),
@@ -105,7 +105,7 @@ public partial class MainWindow : Window
         GoalRemainingText.Text = total <= store.Goals.CalorieGoal ? $"{store.Goals.CalorieGoal - total:N0} kcal to go" : $"{total - store.Goals.CalorieGoal:N0} kcal beyond goal";
         progress = Math.Clamp((double)(total / store.Goals.CalorieGoal), 0, 1);
         UpdateProgress();
-        var weight = store.LatestWeight(displayedDay, "L");
+        var weight = store.LatestWeight(displayedDay);
         GoalWeight.Text = $"{store.Goals.TargetWeightKg:0.##} kg";
         GoalWeightNote.Text = $"Target by {store.Goals.TargetDate:MMM d, yyyy}";
         var days = weight == null ? 0 : (store.Goals.TargetDate - weight.Date.Date).Days;
@@ -114,7 +114,7 @@ public partial class MainWindow : Window
         RequiredDeficit.Text = weight == null ? "Add an L weight for your daily estimate." : days <= 0 ? "The target date has passed this weigh-in." :
             $"{Math.Max(0m, weight.WeightKg - store.Goals.TargetWeightKg) * FitnessStore.CaloriesPerKg / days:N0} kcal/day to target";
         historyRows = store.AllCalories.Select((e, i) => new HistoryRow(e.Date.Date, i, e.Calories >= 0 ? "Calorie deficit" : "Calorie surplus", $"{FitnessStore.Signed(e.Calories)} kcal", e.Calories >= 0 ? FitnessChart.Mint : FitnessChart.Rose, e, null))
-            .Concat(store.Weights.Entries.Select((e, i) => new HistoryRow(e.Date.Date, i, $"Weigh-in · {e.Type}", $"{e.WeightKg:0.##} kg", e.Type.Equals("H", StringComparison.OrdinalIgnoreCase) ? FitnessChart.Orange : FitnessChart.Blue, null, e)))
+            .Concat(store.Weights.LowEntries.Select((e, i) => new HistoryRow(e.Date.Date, i, $"Weigh-in · {e.Type}", $"{e.WeightKg:0.##} kg", FitnessChart.Blue, null, e)))
             .OrderByDescending(e => e.Date).ThenByDescending(e => e.Index).ToList();
         ShowHistoryPage();
         WeightPlot.Redraw(); CaloriePlot.Redraw(); ProgressPlot.Redraw();
@@ -176,10 +176,9 @@ public partial class MainWindow : Window
     {
         if (!FitnessStore.TryNumber(WeightInput.Text.Trim(), out var value) || value <= 0) throw new ArgumentException("Enter a positive weight in kilograms.");
         var date = ParseDate(WeightDate.Text);
-        var type = HighType.IsChecked == true ? "H" : "L";
-        store.AddWeight(value, type, date);
+        store.AddWeight(value, date);
         WeightInput.Clear(); WeightInput.Focus();
-        return $"Saved {value:0.##} kg ({type}) · {date:MMM d}";
+        return $"Saved {value:0.##} kg · {date:MMM d}";
     });
     private void SaveEntry(TextBlock status, Func<string> action)
     {
